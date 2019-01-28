@@ -4,7 +4,8 @@ A statistical model to predict oyster mortality in Pipeclay (PC) and Pitt Water 
 Data description
 -------------
 
-Surface water temperature data used to build this model are classified into three types, which are separately from sensor records, float and rack loggers. Details of each dataset is summarized in following table.
+This model is built on surface water temperature data and is categorised into three key areas: (1) sensor records; (2) float loggers and (3) rack loggers. Details of each dataset is summarized in the following
+table.
 
 <table>
 <colgroup>
@@ -45,28 +46,32 @@ Surface water temperature data used to build this model are classified into thre
 </tbody>
 </table>
 
-The daily oyster mortality data is recored by farmers in PC and PW, stored in binary formats, where 1 represents the existence of observed oyster mortality and 0 otherwise. 
+The daily oyster mortality data is recorded by farmers in PC and PW, stored in binary formats, where 1 represents the existence of observed oyster mortality and 0 otherwise. 
 
-It should be noted that surface water temperature data are recorded with spatial variability, i.e. they are various in different zones of PC and PW. Additionally, temperature data are recorded in hourly resolution rather than daily resolution used in oyster mortality data. Before model building, we firstly average three temperature data in both spatial and temporal dimensions. The resultant temperature data are three one-dimensional daily time series, having the same size as oyster mortality data. 
+It should be noted that surface water temperature data are recorded with spatial variability, i.e. they are various in different zones of PC and PW. Additionally, temperature data are recorded in hourly resolution rather than daily resolution used in oyster mortality data. Prior to model building, three levels of temperature data are averaged in both spatial and temporal proportions. With the same size as oyster mortality data, the resultant temperature data are three one-dimensional daily time series, having the same size as oyster mortality data. 
 
 Model description
 -------------
 
-For each of three dataset (Sensor, Rack and Float), we build a generalized linear model (GLM) to measure the predictability of oyster mortality based on surface temperature data. The reason to use GLM is that it is the most accessable and explainable approach to determining the statistical connection between binary (oyster mortality) and numeric (temperature) variables here (Nelder and Wedderburn, 1972). Different from traditional linear regression assuming response variables and errores follow strict normal distribution, GLM allows the existence of expotential families, such as binomial distribution in this case. The general expression of GLM with binomial distribution is:
+For each of the three datasets (Sensor, Rack and Float), a
+generalized linear model (GLM) was constructed to measure the
+predictability of oyster mortality based on surface temperature data. The rationale for using GLM is that it is the most accessible and explicable approach to determining the statistical connection between binary (oyster mortality) and numeric (temperature) variables here (Nelder and Wedderburn, 1972). Different from traditional linear regression assuming response variables and errors following strict normal distribution, GLM allows the existence of expotential families, such as binomial distribution in this case. The general expression of GLM with binomial distribution is:
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=link(\frac{p}{1-p})&space;\sim&space;V1&plus;V2&plus;..." target="_blank"><img src="https://latex.codecogs.com/gif.latex?link(\frac{p}{1-p})&space;\sim&space;V1&plus;V2&plus;..." title="link(\frac{p}{1-p}) \sim V1+V2+..." /></a>
 
-where `p` is the fitted probability for the existence of `true (1)` case in response variable and `Vn` indicates regressors. `link()` indicates a particular link function to adjust the probability distribution of reponse variable into normal distribution. There are three traditionally used link function in GLM for binomial distribution, which are logit, prob and cloglog (Laaksonen, 2005). Compared to other two link functions, logit link function gets better interpretability of fitted coefficients, while other two models lose it due to the complexity of link function. Therefore, we choose logit link function to build this model. The final model format is determined as:
+where `p` is the fitted probability for the existence of `true (1)` case in response variable and `Vn` indicates regressors. `link()` indicates a particular link function to adjust the probability distribution of reponse variable into normal distribution. Laaksonen (2005) identified GLM’s commonly applied link functions which are used for binominal
+distribution: (1) logit; (2) prob and (3) cloglog. Compared to other two link functions, logit link function gets better interpretability of fitted coefficients, while other two models lose it due to the complexity of link function. Based on this, the logit link function was selected for the
+construction of this model. The final model format is determined as:
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=ln(\frac{p}{1-p})&space;\sim&space;b0&plus;b1ln(Temp)&space;&plus;&space;b2loc&plus;b3ln(Temp):loc" target="_blank"><img src="https://latex.codecogs.com/gif.latex?ln(\frac{p}{1-p})&space;\sim&space;b0&plus;b1ln(Temp)&space;&plus;&space;b2loc&plus;b3ln(Temp):loc" title="ln(\frac{p}{1-p}) \sim b0+b1ln(Temp) + b2loc+b3ln(Temp):loc" /></a>
 
-where `ln()` is the default format for logit link function, `ln(Temp)` indicates the logarithmic transformation of daily surface temperature, `loc` is a binary variable indicating the location for each data (`PC` or `PW`) and `ln(Temp):loc` is the interaction (product) between `ln(Temp)` and `loc`. `b0-3` are fitted coefficients for each model, separately representing `default constant`, `fingerprint of logarithmic transformation of daily surface temperature`, `influence of different locations`, `different performace of temperature on oyster mortality in different locations`. If we consider `PC` as `0` and `PW` as `1`. The fitted model equation would have two different types:
+where `ln()` is the default format for logit link function, `ln(Temp)` indicates the logarithmic transformation of daily surface temperature, `loc` is a binary variable indicating the location for each data (`PC` or `PW`) and `ln(Temp):loc` is the interaction (product) between `ln(Temp)` and `loc`. `b0-3` are fitted coefficients for each model, separately representing `default constant`, `fingerprint of logarithmic transformation of daily surface temperature`, `influence of different locations`, `different performance of temperature on oyster mortality in different locations`. If we consider `PC` as `0` and `PW` as `1`, the fitted model equation would have two different types:
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=ln(\frac{p}{1-p})=b0&plus;b1ln(Temp)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?ln(\frac{p}{1-p})=b0&plus;b1ln(Temp)" title="ln(\frac{p}{1-p})=b0+b1ln(Temp)" /></a> for `PC` 
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=ln(\frac{p}{1-p})=(b0&plus;b2)&plus;(b1&plus;b3)ln(Temp)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?ln(\frac{p}{1-p})=(b0&plus;b2)&plus;(b1&plus;b3)ln(Temp)" title="ln(\frac{p}{1-p})=(b0+b2)+(b1+b3)ln(Temp)" /></a> for `PW`
 
-Since this model is built for each of three dataset (Sensor, Rack, Float), we could finally get six equations to model the predictability of oyster mortality based on surface water temperature. All six equations could be expressed in the format of 
+Since this model is built for each of three datasets (Sensor, Rack, Float), we could finally get six equations to model the predictability of oyster mortality based on surface water temperature. All six equations could be expressed in the format of 
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=ln(\frac{p}{1-p})=a&plus;bln(Temp)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?ln(\frac{p}{1-p})=a&plus;bln(Temp)" title="ln(\frac{p}{1-p})=a+bln(Temp)" /></a>
 
@@ -124,7 +129,7 @@ The fitted coefficients `a` and `b` in all six equations are summarized in follo
 </tbody>
 </table>
 
-The fitted coefficients (`a` and `b`) reveal some characteristics of temperature's influence on oyster mortality. All results show that the increase of temperature tend to positively impact the possibility of oyster mortality's existence, and this influence is more significant in `PC` compared to `PW` (shown by higher `b` in `PC`). Temperature's influences on oyster mortality is similar in Sensor and Float data (shown by similar `b`), but very distinct in Rack data. This is due to the fact that the oyster mortality observations in PC and PW are remarkably different, if you look at the rack observation data of POM, you would find that observations in PC are mostly 0 while there are many 1 and 2 (they are all treated as 1 in model) in PW. Please take care of this point. It could be a potential observation error or something like that.
+The fitted coefficients (`a` and `b`) reveal some characteristics of temperature's influence on oyster mortality. The outcomes reveal that temperature increases have a positive influence on the existence of oyster mortality, and this influence is more significant in comparison `PW` (shown by higher `b` in `PC`). Temperature influences on oyster mortality is similar in Sensor and Float data (shown by similar `b`), but very distinct in Rack data. This is due to the fact that the oyster mortality observations in PC and PW are remarkably different. When reviewing POM’s rack observation data, it is evident that PC observations are mainly 0 and PW illustrates mainly 1 and 3 which are all treated as 1 in the model. This is an important aspect to take note of as this could be an error in observation.
 
 
 
